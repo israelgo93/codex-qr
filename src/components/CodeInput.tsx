@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { parseCSV } from "@/lib/csv";
 import { parseCodesFromText } from "@/lib/qr";
 
@@ -48,25 +48,27 @@ export default function CodeInput({ onCodes, disabled }: CodeInputProps) {
   };
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur-2xl">
+    <div className="glass-panel relative overflow-hidden rounded-3xl p-6">
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-20 left-1/2 h-40 w-[120%] -translate-x-1/2 rounded-full bg-gradient-to-r from-indigo-500/20 via-fuchsia-400/10 to-sky-400/20 blur-3xl"
+        className="pointer-events-none absolute -top-20 left-1/2 h-40 w-[120%] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(34,211,238,0.20),transparent_60%)] blur-3xl"
       />
 
-      <div className="relative flex items-center gap-1 rounded-full border border-white/10 bg-black/30 p-1 w-fit">
+      <div className="relative flex w-fit items-center gap-1 rounded-full border border-[color:var(--line)] bg-[color:var(--control)] p-1">
         {(["paste", "csv"] as Mode[]).map((m) => (
           <button
             key={m}
             onClick={() => setMode(m)}
             className={`relative rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
-              mode === m ? "text-black" : "text-white/60 hover:text-white"
+              mode === m
+                ? "text-[color:var(--button-foreground)]"
+                : "text-[color:var(--muted)] hover:text-[color:var(--foreground)]"
             }`}
           >
             {mode === m && (
               <motion.span
                 layoutId="modePill"
-                className="absolute inset-0 rounded-full bg-white"
+                className="absolute inset-0 rounded-full bg-[color:var(--button-background)]"
                 transition={{ type: "spring", stiffness: 400, damping: 32 }}
               />
             )}
@@ -90,12 +92,12 @@ export default function CodeInput({ onCodes, disabled }: CodeInputProps) {
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="GG3LJ5LCWEWWQWER&#10;SLECDHH0YC6X&#10;EFN0PJ1AQ4R&#10;..."
+              placeholder={"GG3LJ5LCWEWWQWER\nSLECDHH0YC6X\nEFN0PJ1AQ4R\n..."}
               rows={7}
-              className="w-full resize-none rounded-2xl border border-white/10 bg-black/40 p-4 font-mono text-sm text-white placeholder:text-white/25 focus:border-white/25 focus:outline-none focus:ring-2 focus:ring-white/10"
+              className="field w-full resize-none rounded-2xl p-4 font-mono text-sm"
             />
-            <div className="mt-3 flex items-center justify-between">
-              <span className="text-xs text-white/50">
+            <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <span className="text-xs text-[color:var(--muted)]">
                 {pastedCount > 0
                   ? `${pastedCount} código${pastedCount !== 1 ? "s" : ""} detectado${pastedCount !== 1 ? "s" : ""}`
                   : "Separa por comas, espacios o saltos de línea"}
@@ -103,7 +105,7 @@ export default function CodeInput({ onCodes, disabled }: CodeInputProps) {
               <button
                 onClick={handlePasteSubmit}
                 disabled={disabled || !pastedCount}
-                className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-white px-5 py-2 text-sm font-medium text-black transition-all disabled:cursor-not-allowed disabled:opacity-40 hover:shadow-[0_0_30px_rgba(255,255,255,0.35)]"
+                className="primary-button group inline-flex items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <span>Generar QR</span>
                 <svg
@@ -156,11 +158,11 @@ export default function CodeInput({ onCodes, disabled }: CodeInputProps) {
               onClick={() => fileRef.current?.click()}
               className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed p-10 text-center transition-all ${
                 dragging
-                  ? "border-white/40 bg-white/[0.08]"
-                  : "border-white/15 bg-black/30 hover:border-white/25 hover:bg-white/[0.04]"
+                  ? "border-[color:var(--accent)] bg-[color:var(--control-strong)]"
+                  : "border-[color:var(--line)] bg-[color:var(--control)] hover:bg-[color:var(--control-strong)]"
               }`}
             >
-              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-[color:var(--line)] bg-[color:var(--glass)]">
                 <svg
                   width="20"
                   height="20"
@@ -170,17 +172,17 @@ export default function CodeInput({ onCodes, disabled }: CodeInputProps) {
                   strokeWidth="1.8"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="text-white/80"
+                  className="text-[color:var(--foreground)]"
                 >
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="17 8 12 3 7 8" />
                   <line x1="12" y1="3" x2="12" y2="15" />
                 </svg>
               </div>
-              <p className="text-sm text-white">
+              <p className="text-sm text-[color:var(--foreground)]">
                 {fileName ?? "Arrastra un CSV o haz clic para seleccionar"}
               </p>
-              <p className="mt-1 text-xs text-white/40">
+              <p className="mt-1 text-xs text-[color:var(--muted)]">
                 Se detectará automáticamente una columna tipo{" "}
                 <span className="font-mono">codes_promotional</span>
               </p>
@@ -193,7 +195,7 @@ export default function CodeInput({ onCodes, disabled }: CodeInputProps) {
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="relative mt-3 text-xs text-rose-300"
+          className="relative mt-3 text-xs text-rose-400"
         >
           {error}
         </motion.p>

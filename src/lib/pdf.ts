@@ -1,7 +1,10 @@
 import jsPDF from "jspdf";
-import { generateQRDataURL, REDEEM_URL } from "./qr";
-
-const LOGO_SRC = "/logos/Codex 256 x 256.png";
+import {
+  DEFAULT_LOGO_SRC,
+  displayURL,
+  generateQRDataURL,
+  REDEEM_URL,
+} from "./qr";
 
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -48,6 +51,8 @@ export interface PDFProgress {
 
 export interface PDFOptions {
   footer?: string;
+  logoSrc?: string;
+  redeemUrl?: string;
   onProgress?: (p: PDFProgress) => void;
 }
 
@@ -55,7 +60,12 @@ export async function generatePDF(
   codes: string[],
   options: PDFOptions = {}
 ): Promise<Blob> {
-  const { footer, onProgress } = options;
+  const {
+    footer,
+    logoSrc = DEFAULT_LOGO_SRC,
+    redeemUrl = REDEEM_URL,
+    onProgress,
+  } = options;
   const pdf = new jsPDF({
     orientation: "portrait",
     unit: "mm",
@@ -71,8 +81,9 @@ export async function generatePDF(
   const cellW = (pageW - marginX * 2) / cols;
   const cellH = (pageH - marginY * 2) / rows;
 
-  const logoImg = await loadImage(LOGO_SRC);
+  const logoImg = await loadImage(logoSrc);
   const logoData = logoBadgeDataURL(logoImg);
+  const urlLabel = displayURL(redeemUrl);
 
   const total = codes.length;
   for (let i = 0; i < total; i++) {
@@ -120,21 +131,23 @@ export async function generatePDF(
     const qrX = x + (cellW - qrSize) / 2;
     const qrY = y + topReserved + (cellH - topReserved - bottomReserved - qrSize) / 2;
 
-    const qrData = await generateQRDataURL(REDEEM_URL, { size: 800 });
+    const qrData = await generateQRDataURL(redeemUrl, { size: 800, logoSrc });
     pdf.addImage(qrData, "PNG", qrX, qrY, qrSize, qrSize);
 
     // URL
     pdf.setTextColor(40, 40, 40);
     pdf.setFontSize(6.2);
     pdf.setFont("helvetica", "normal");
-    const urlLabel = "platform.openai.com/settings/billing/promotions";
-    pdf.text(urlLabel, x + cellW / 2, qrY + qrSize + 4, { align: "center" });
+    const urlLines = pdf.splitTextToSize(urlLabel, cellW - 8).slice(0, 2);
+    pdf.text(urlLines, x + cellW / 2, qrY + qrSize + 4, { align: "center" });
 
     // Promo code (prominent)
     pdf.setFont("courier", "bold");
     pdf.setFontSize(11);
     pdf.setTextColor(0, 0, 0);
-    pdf.text(codes[i], x + cellW / 2, qrY + qrSize + 10, { align: "center" });
+    pdf.text(codes[i], x + cellW / 2, qrY + qrSize + 10 + (urlLines.length - 1) * 3, {
+      align: "center",
+    });
 
     // Optional footer (e.g. "Créditos provistos por XXXX")
     if (footerText) {

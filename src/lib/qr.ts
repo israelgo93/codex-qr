@@ -3,21 +3,22 @@ import QRCode from "qrcode";
 export const REDEEM_URL =
   "https://platform.openai.com/settings/organization/billing/promotions";
 
-const LOGO_SRC = "/logos/Codex 256 x 256.png";
+export const DEFAULT_LOGO_SRC = "/logos/Codex 256 x 256.png";
 
-let cachedLogo: HTMLImageElement | null = null;
+const cachedLogos = new Map<string, HTMLImageElement>();
 
-function loadLogo(): Promise<HTMLImageElement> {
+function loadLogo(src: string): Promise<HTMLImageElement> {
+  const cachedLogo = cachedLogos.get(src);
   if (cachedLogo) return Promise.resolve(cachedLogo);
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
-      cachedLogo = img;
+      cachedLogos.set(src, img);
       resolve(img);
     };
     img.onerror = reject;
-    img.src = LOGO_SRC;
+    img.src = src;
   });
 }
 
@@ -25,6 +26,7 @@ export interface QRRenderOptions {
   size?: number;
   margin?: number;
   logoRatio?: number;
+  logoSrc?: string;
 }
 
 export async function generateQRDataURL(
@@ -34,6 +36,7 @@ export async function generateQRDataURL(
   const size = opts.size ?? 1024;
   const margin = opts.margin ?? 2;
   const logoRatio = opts.logoRatio ?? 0.22;
+  const logoSrc = opts.logoSrc ?? DEFAULT_LOGO_SRC;
 
   const canvas = document.createElement("canvas");
   canvas.width = size;
@@ -52,7 +55,7 @@ export async function generateQRDataURL(
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("No canvas 2D context");
 
-  const logo = await loadLogo();
+  const logo = await loadLogo(logoSrc);
   const logoSize = Math.round(size * logoRatio);
   const logoX = Math.round((size - logoSize) / 2);
   const logoY = Math.round((size - logoSize) / 2);
@@ -111,8 +114,13 @@ function roundRect(
   ctx.closePath();
 }
 
-export function buildRedeemURL(code: string): string {
-  return REDEEM_URL;
+export function displayURL(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.hostname}${parsed.pathname}`;
+  } catch {
+    return url.replace(/^https?:\/\//, "");
+  }
 }
 
 export function parseCodesFromText(input: string): string[] {

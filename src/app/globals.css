@@ -1,8 +1,71 @@
 @import "tailwindcss";
 
 :root {
-  --background: #000000;
-  --foreground: #ededed;
+  color-scheme: light dark;
+  --background: #f7fafb;
+  --foreground: #102023;
+  --muted: rgba(16, 32, 35, 0.62);
+  --line: rgba(16, 32, 35, 0.12);
+  --glass: rgba(255, 255, 255, 0.48);
+  --glass-strong: rgba(255, 255, 255, 0.68);
+  --control: rgba(255, 255, 255, 0.34);
+  --control-strong: rgba(255, 255, 255, 0.58);
+  --accent: #0f766e;
+  --button-background: #102023;
+  --button-foreground: #ffffff;
+  --field-background: rgba(255, 255, 255, 0.58);
+  --field-placeholder: rgba(16, 32, 35, 0.36);
+  --glow-a: rgba(20, 184, 166, 0.20);
+  --glow-b: rgba(56, 189, 248, 0.16);
+  --glow-c: rgba(244, 114, 182, 0.12);
+  --grid: rgba(16, 32, 35, 0.55);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --background: #060909;
+    --foreground: #f3fbfb;
+    --muted: rgba(243, 251, 251, 0.58);
+    --line: rgba(255, 255, 255, 0.12);
+    --glass: rgba(255, 255, 255, 0.055);
+    --glass-strong: rgba(255, 255, 255, 0.10);
+    --control: rgba(0, 0, 0, 0.24);
+    --control-strong: rgba(255, 255, 255, 0.075);
+    --accent: #5eead4;
+    --button-background: #f3fbfb;
+    --button-foreground: #071111;
+    --field-background: rgba(0, 0, 0, 0.34);
+    --field-placeholder: rgba(243, 251, 251, 0.28);
+    --glow-a: rgba(20, 184, 166, 0.18);
+    --glow-b: rgba(56, 189, 248, 0.11);
+    --glow-c: rgba(244, 114, 182, 0.09);
+    --grid: rgba(255, 255, 255, 0.9);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #060909;
+  --foreground: #f3fbfb;
+  --muted: rgba(243, 251, 251, 0.58);
+  --line: rgba(255, 255, 255, 0.12);
+  --glass: rgba(255, 255, 255, 0.055);
+  --glass-strong: rgba(255, 255, 255, 0.10);
+  --control: rgba(0, 0, 0, 0.24);
+  --control-strong: rgba(255, 255, 255, 0.075);
+  --accent: #5eead4;
+  --button-background: #f3fbfb;
+  --button-foreground: #071111;
+  --field-background: rgba(0, 0, 0, 0.34);
+  --field-placeholder: rgba(243, 251, 251, 0.28);
+  --glow-a: rgba(20, 184, 166, 0.18);
+  --glow-b: rgba(56, 189, 248, 0.11);
+  --glow-c: rgba(244, 114, 182, 0.09);
+  --grid: rgba(255, 255, 255, 0.9);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
 }
 
 @theme inline {
@@ -24,45 +87,74 @@ body {
 }
 
 ::selection {
-  background: rgba(255, 255, 255, 0.18);
-  color: #fff;
+  background: rgba(20, 184, 166, 0.22);
+  color: var(--foreground);
 }
 
-/* Liquid glass utilities */
-.glass {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.08),
-    rgba(255, 255, 255, 0.02)
-  );
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.glass-panel,
+.glass-card,
+.glass-orb {
+  background:
+    linear-gradient(135deg, var(--glass-strong), var(--glass)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent);
+  border: 1px solid var(--line);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.20);
+  backdrop-filter: blur(28px) saturate(170%);
+  -webkit-backdrop-filter: blur(28px) saturate(170%);
 }
 
-.glass-strong {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.14),
-    rgba(255, 255, 255, 0.04)
-  );
-  backdrop-filter: blur(32px) saturate(200%);
-  -webkit-backdrop-filter: blur(32px) saturate(200%);
+.glass-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--line));
+  transform: translateY(-1px);
 }
 
-/* Scrollbar */
+.field {
+  border: 1px solid var(--line);
+  background: var(--field-background);
+  color: var(--foreground);
+  outline: none;
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+}
+
+.field::placeholder {
+  color: var(--field-placeholder);
+}
+
+.field:focus {
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.primary-button {
+  background: var(--button-background);
+  color: var(--button-foreground);
+  box-shadow: 0 14px 42px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.primary-button:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 54px color-mix(in srgb, var(--accent) 32%, transparent);
+}
+
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  scrollbar-color: color-mix(in srgb, var(--foreground) 20%, transparent)
+    transparent;
 }
+
 *::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
+
 *::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: color-mix(in srgb, var(--foreground) 18%, transparent);
   border-radius: 999px;
 }
+
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: color-mix(in srgb, var(--foreground) 28%, transparent);
 }
