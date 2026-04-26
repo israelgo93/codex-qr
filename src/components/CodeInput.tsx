@@ -3,16 +3,19 @@
 import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { parseCSV } from "@/lib/csv";
+import type { Dictionary } from "@/lib/i18n";
+import { formatMessage } from "@/lib/i18n";
 import { parseCodesFromText } from "@/lib/qr";
 
 interface CodeInputProps {
+  copy: Dictionary;
   onCodes: (codes: string[]) => void;
   disabled?: boolean;
 }
 
 type Mode = "paste" | "csv";
 
-export default function CodeInput({ onCodes, disabled }: CodeInputProps) {
+export default function CodeInput({ copy, onCodes, disabled }: CodeInputProps) {
   const [mode, setMode] = useState<Mode>("paste");
   const [text, setText] = useState("");
   const [fileName, setFileName] = useState<string | null>(null);
@@ -21,12 +24,16 @@ export default function CodeInput({ onCodes, disabled }: CodeInputProps) {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const pastedCount = parseCodesFromText(text).length;
+  const detectedLabel =
+    pastedCount === 1
+      ? copy.detected_one
+      : formatMessage(copy.detected_other, { count: pastedCount });
 
   const handlePasteSubmit = () => {
     setError(null);
     const codes = parseCodesFromText(text);
     if (!codes.length) {
-      setError("Pega al menos un código promocional.");
+      setError(copy.pasteError);
       return;
     }
     onCodes(codes);
@@ -38,34 +45,30 @@ export default function CodeInput({ onCodes, disabled }: CodeInputProps) {
     try {
       const codes = await parseCSV(file);
       if (!codes.length) {
-        setError("No se encontraron códigos en el CSV.");
+        setError(copy.csvEmptyError);
         return;
       }
       onCodes(codes);
     } catch {
-      setError("No se pudo leer el CSV.");
+      setError(copy.csvReadError);
     }
   };
 
   return (
     <div className="glass-panel relative overflow-hidden rounded-3xl p-6">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-20 left-1/2 h-40 w-[120%] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(34,211,238,0.20),transparent_60%)] blur-3xl"
-      />
-
       <div className="relative flex w-fit items-center gap-1 rounded-full border border-[color:var(--line)] bg-[color:var(--control)] p-1">
-        {(["paste", "csv"] as Mode[]).map((m) => (
+        {(["paste", "csv"] as Mode[]).map((item) => (
           <button
-            key={m}
-            onClick={() => setMode(m)}
+            key={item}
+            type="button"
+            onClick={() => setMode(item)}
             className={`relative rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
-              mode === m
+              mode === item
                 ? "text-[color:var(--button-foreground)]"
                 : "text-[color:var(--muted)] hover:text-[color:var(--foreground)]"
             }`}
           >
-            {mode === m && (
+            {mode === item && (
               <motion.span
                 layoutId="modePill"
                 className="absolute inset-0 rounded-full bg-[color:var(--button-background)]"
@@ -73,7 +76,7 @@ export default function CodeInput({ onCodes, disabled }: CodeInputProps) {
               />
             )}
             <span className="relative">
-              {m === "paste" ? "Pegar códigos" : "Subir CSV"}
+              {item === "paste" ? copy.pasteCodes : copy.uploadCsv}
             </span>
           </button>
         ))}
@@ -91,23 +94,22 @@ export default function CodeInput({ onCodes, disabled }: CodeInputProps) {
           >
             <textarea
               value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder={"GG3LJ5LCWEWWQWER\nSLECDHH0YC6X\nEFN0PJ1AQ4R\n..."}
+              onChange={(event) => setText(event.target.value)}
+              placeholder={copy.pastePlaceholder}
               rows={7}
               className="field w-full resize-none rounded-2xl p-4 font-mono text-sm"
             />
             <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <span className="text-xs text-[color:var(--muted)]">
-                {pastedCount > 0
-                  ? `${pastedCount} código${pastedCount !== 1 ? "s" : ""} detectado${pastedCount !== 1 ? "s" : ""}`
-                  : "Separa por comas, espacios o saltos de línea"}
+                {pastedCount > 0 ? detectedLabel : copy.separatorHint}
               </span>
               <button
+                type="button"
                 onClick={handlePasteSubmit}
                 disabled={disabled || !pastedCount}
-                className="primary-button group inline-flex items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-40"
+                className="primary-button inline-flex items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-all disabled:cursor-not-allowed disabled:opacity-40"
               >
-                <span>Generar QR</span>
+                <span>{copy.generateQr}</span>
                 <svg
                   width="14"
                   height="14"
@@ -117,7 +119,7 @@ export default function CodeInput({ onCodes, disabled }: CodeInputProps) {
                   strokeWidth="2.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="transition-transform group-hover:translate-x-0.5"
+                  aria-hidden="true"
                 >
                   <path d="M5 12h14M13 5l7 7-7 7" />
                 </svg>
@@ -138,27 +140,27 @@ export default function CodeInput({ onCodes, disabled }: CodeInputProps) {
               type="file"
               accept=".csv,text/csv"
               className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handleFile(f);
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) handleFile(file);
               }}
             />
             <div
-              onDragOver={(e) => {
-                e.preventDefault();
+              onDragOver={(event) => {
+                event.preventDefault();
                 setDragging(true);
               }}
               onDragLeave={() => setDragging(false)}
-              onDrop={(e) => {
-                e.preventDefault();
+              onDrop={(event) => {
+                event.preventDefault();
                 setDragging(false);
-                const f = e.dataTransfer.files?.[0];
-                if (f) handleFile(f);
+                const file = event.dataTransfer.files?.[0];
+                if (file) handleFile(file);
               }}
               onClick={() => fileRef.current?.click()}
               className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed p-10 text-center transition-all ${
                 dragging
-                  ? "border-[color:var(--accent)] bg-[color:var(--control-strong)]"
+                  ? "border-[color:var(--foreground)] bg-[color:var(--control-strong)]"
                   : "border-[color:var(--line)] bg-[color:var(--control)] hover:bg-[color:var(--control-strong)]"
               }`}
             >
@@ -173,6 +175,7 @@ export default function CodeInput({ onCodes, disabled }: CodeInputProps) {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   className="text-[color:var(--foreground)]"
+                  aria-hidden="true"
                 >
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="17 8 12 3 7 8" />
@@ -180,10 +183,10 @@ export default function CodeInput({ onCodes, disabled }: CodeInputProps) {
                 </svg>
               </div>
               <p className="text-sm text-[color:var(--foreground)]">
-                {fileName ?? "Arrastra un CSV o haz clic para seleccionar"}
+                {fileName ?? copy.dropCsv}
               </p>
               <p className="mt-1 text-xs text-[color:var(--muted)]">
-                Se detectará automáticamente una columna tipo{" "}
+                {copy.csvColumnHint}{" "}
                 <span className="font-mono">codes_promotional</span>
               </p>
             </div>
@@ -195,7 +198,7 @@ export default function CodeInput({ onCodes, disabled }: CodeInputProps) {
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="relative mt-3 text-xs text-rose-400"
+          className="relative mt-3 text-xs text-[color:var(--danger)]"
         >
           {error}
         </motion.p>

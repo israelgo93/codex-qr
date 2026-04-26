@@ -1,10 +1,11 @@
 import jsPDF from "jspdf";
 import {
   DEFAULT_LOGO_SRC,
-  displayURL,
+  compactDisplayURL,
   generateQRDataURL,
   REDEEM_URL,
 } from "./qr";
+import { logoNeedsDarkBadge } from "./theme";
 
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -16,7 +17,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-function logoBadgeDataURL(img: HTMLImageElement): string {
+function logoDataURL(img: HTMLImageElement, needsDarkBadge: boolean): string {
   const size = 256;
   const canvas = document.createElement("canvas");
   canvas.width = size;
@@ -24,24 +25,50 @@ function logoBadgeDataURL(img: HTMLImageElement): string {
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("No ctx");
 
-  const r = size * 0.24;
-  ctx.fillStyle = "#0a0a0a";
-  ctx.beginPath();
-  ctx.moveTo(r, 0);
-  ctx.lineTo(size - r, 0);
-  ctx.quadraticCurveTo(size, 0, size, r);
-  ctx.lineTo(size, size - r);
-  ctx.quadraticCurveTo(size, size, size - r, size);
-  ctx.lineTo(r, size);
-  ctx.quadraticCurveTo(0, size, 0, size - r);
-  ctx.lineTo(0, r);
-  ctx.quadraticCurveTo(0, 0, r, 0);
-  ctx.closePath();
-  ctx.fill();
+  const inset = needsDarkBadge ? size * 0.12 : 0;
+  if (needsDarkBadge) {
+    const r = size * 0.24;
+    ctx.fillStyle = "#0a0a0a";
+    ctx.beginPath();
+    ctx.moveTo(r, 0);
+    ctx.lineTo(size - r, 0);
+    ctx.quadraticCurveTo(size, 0, size, r);
+    ctx.lineTo(size, size - r);
+    ctx.quadraticCurveTo(size, size, size - r, size);
+    ctx.lineTo(r, size);
+    ctx.quadraticCurveTo(0, size, 0, size - r);
+    ctx.lineTo(0, r);
+    ctx.quadraticCurveTo(0, 0, r, 0);
+    ctx.closePath();
+    ctx.fill();
+  }
 
-  const inset = size * 0.12;
   ctx.drawImage(img, inset, inset, size - inset * 2, size - inset * 2);
   return canvas.toDataURL("image/png");
+}
+
+function truncateMiddleToWidth(
+  pdf: jsPDF,
+  text: string,
+  maxWidth: number
+): string {
+  if (pdf.getTextWidth(text) <= maxWidth) return text;
+
+  const separator = "...";
+  let start = Math.ceil((text.length - separator.length) / 2);
+  let end = Math.floor((text.length - separator.length) / 2);
+
+  while (start > 4 && end > 4) {
+    const candidate = `${text.slice(0, start)}${separator}${text.slice(text.length - end)}`;
+    if (pdf.getTextWidth(candidate) <= maxWidth) return candidate;
+    if (start >= end) {
+      start -= 1;
+    } else {
+      end -= 1;
+    }
+  }
+
+  return text.slice(0, Math.max(4, start)) + separator;
 }
 
 export interface PDFProgress {
@@ -82,8 +109,8 @@ export async function generatePDF(
   const cellH = (pageH - marginY * 2) / rows;
 
   const logoImg = await loadImage(logoSrc);
-  const logoData = logoBadgeDataURL(logoImg);
-  const urlLabel = displayURL(redeemUrl);
+  const logoData = logoDataURL(logoImg, logoNeedsDarkBadge(logoSrc));
+  const urlLabel = compactDisplayURL(redeemUrl);
 
   const total = codes.length;
   for (let i = 0; i < total; i++) {
@@ -136,16 +163,16 @@ export async function generatePDF(
 
     // URL
     pdf.setTextColor(40, 40, 40);
-    pdf.setFontSize(6.2);
+    pdf.setFontSize(5.4);
     pdf.setFont("helvetica", "normal");
-    const urlLines = pdf.splitTextToSize(urlLabel, cellW - 8).slice(0, 2);
-    pdf.text(urlLines, x + cellW / 2, qrY + qrSize + 4, { align: "center" });
+    const visibleUrl = truncateMiddleToWidth(pdf, urlLabel, cellW - 10);
+    pdf.text(visibleUrl, x + cellW / 2, qrY + qrSize + 4, { align: "center" });
 
     // Promo code (prominent)
     pdf.setFont("courier", "bold");
     pdf.setFontSize(11);
     pdf.setTextColor(0, 0, 0);
-    pdf.text(codes[i], x + cellW / 2, qrY + qrSize + 10 + (urlLines.length - 1) * 3, {
+    pdf.text(codes[i], x + cellW / 2, qrY + qrSize + 10, {
       align: "center",
     });
 

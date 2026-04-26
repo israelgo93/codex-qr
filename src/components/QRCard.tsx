@@ -4,24 +4,27 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
-  DEFAULT_LOGO_SRC,
   REDEEM_URL,
+  compactDisplayURL,
   displayURL,
   generateQRDataURL,
 } from "@/lib/qr";
+import { DARK_LOGO_SRC } from "@/lib/theme";
 
 interface QRCardProps {
   code: string;
   index: number;
   logoSrc?: string;
   redeemUrl?: string;
+  altText: string;
 }
 
 export default function QRCard({
   code,
   index,
-  logoSrc = DEFAULT_LOGO_SRC,
+  logoSrc = DARK_LOGO_SRC,
   redeemUrl = REDEEM_URL,
+  altText,
 }: QRCardProps) {
   const [dataUrl, setDataUrl] = useState<string | null>(null);
   const mountedRef = useRef(true);
@@ -51,11 +54,6 @@ export default function QRCard({
       }}
       className="glass-card group relative overflow-hidden rounded-2xl p-4 transition-all"
     >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-60 [background:radial-gradient(600px_circle_at_var(--x,50%)_var(--y,0%),rgba(20,184,166,0.12),transparent_40%)]"
-      />
-
       <div className="relative flex items-center justify-between">
         <span className="font-mono text-xs text-[color:var(--muted)]">
           #{String(index + 1).padStart(2, "0")}
@@ -75,7 +73,7 @@ export default function QRCard({
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={dataUrl}
-            alt={`QR ${code}`}
+            alt={altText}
             className="h-full w-full object-contain"
           />
         ) : (
@@ -84,8 +82,11 @@ export default function QRCard({
       </div>
 
       <div className="relative mt-3 text-center">
-        <div className="truncate text-[10px] uppercase tracking-wider text-[color:var(--muted)]">
-          {displayURL(redeemUrl)}
+        <div
+          className="mx-auto max-w-full truncate px-1 text-[9px] leading-tight tracking-normal text-[color:var(--muted)]"
+          title={displayURL(redeemUrl)}
+        >
+          {compactDisplayURL(redeemUrl)}
         </div>
         <div className="mt-1 select-all font-mono text-sm font-semibold tracking-wider text-[color:var(--foreground)]">
           {code}

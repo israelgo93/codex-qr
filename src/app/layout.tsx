@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Codex QR · Canjea créditos de OpenAI",
+  title: "Codex QR · API credits",
   description:
-    "Genera códigos QR imprimibles para canjear créditos promocionales de OpenAI. Sube un CSV o pega tus códigos y exporta un PDF listo para recortar.",
+    "Generador bilingüe para crear códigos QR imprimibles y reclamar créditos de la API de OpenAI.",
   icons: {
     icon: "/logos/Codex 256 x 256.png",
     apple: "/logos/Codex 256 x 256.png",

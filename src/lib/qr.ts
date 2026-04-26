@@ -1,11 +1,20 @@
 import QRCode from "qrcode";
+import { DARK_LOGO_SRC, logoNeedsDarkBadge } from "@/lib/theme";
 
 export const REDEEM_URL =
   "https://platform.openai.com/settings/organization/billing/promotions";
 
-export const DEFAULT_LOGO_SRC = "/logos/Codex 256 x 256.png";
+export const DEFAULT_LOGO_SRC = DARK_LOGO_SRC;
 
 const cachedLogos = new Map<string, HTMLImageElement>();
+const cachedLogoBounds = new Map<string, ImageCropBounds>();
+
+interface ImageCropBounds {
+  sx: number;
+  sy: number;
+  sw: number;
+  sh: number;
+}
 
 function loadLogo(src: string): Promise<HTMLImageElement> {
   const cachedLogo = cachedLogos.get(src);
@@ -20,6 +29,72 @@ function loadLogo(src: string): Promise<HTMLImageElement> {
     img.onerror = reject;
     img.src = src;
   });
+}
+
+function fullImageBounds(img: HTMLImageElement): ImageCropBounds {
+  return {
+    sx: 0,
+    sy: 0,
+    sw: img.naturalWidth || img.width,
+    sh: img.naturalHeight || img.height,
+  };
+}
+
+function getVisibleImageBounds(
+  img: HTMLImageElement,
+  src: string
+): ImageCropBounds {
+  const cachedBounds = cachedLogoBounds.get(src);
+  if (cachedBounds) return cachedBounds;
+
+  const width = img.naturalWidth || img.width;
+  const height = img.naturalHeight || img.height;
+  if (!width || !height) return fullImageBounds(img);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return fullImageBounds(img);
+
+  ctx.drawImage(img, 0, 0, width, height);
+
+  let data: Uint8ClampedArray;
+  try {
+    data = ctx.getImageData(0, 0, width, height).data;
+  } catch {
+    return fullImageBounds(img);
+  }
+
+  let minX = width;
+  let minY = height;
+  let maxX = -1;
+  let maxY = -1;
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const alpha = data[(y * width + x) * 4 + 3];
+      if (alpha > 8) {
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (x > maxX) maxX = x;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+
+  const bounds =
+    maxX >= minX && maxY >= minY
+      ? {
+          sx: minX,
+          sy: minY,
+          sw: maxX - minX + 1,
+          sh: maxY - minY + 1,
+        }
+      : fullImageBounds(img);
+
+  cachedLogoBounds.set(src, bounds);
+  return bounds;
 }
 
 export interface QRRenderOptions {
@@ -37,6 +112,7 @@ export async function generateQRDataURL(
   const margin = opts.margin ?? 2;
   const logoRatio = opts.logoRatio ?? 0.22;
   const logoSrc = opts.logoSrc ?? DEFAULT_LOGO_SRC;
+  const needsDarkBadge = logoNeedsDarkBadge(logoSrc);
 
   const canvas = document.createElement("canvas");
   canvas.width = size;
@@ -56,18 +132,18 @@ export async function generateQRDataURL(
   if (!ctx) throw new Error("No canvas 2D context");
 
   const logo = await loadLogo(logoSrc);
-  const logoSize = Math.round(size * logoRatio);
+  const resolvedLogoRatio = opts.logoRatio ?? (needsDarkBadge ? logoRatio : 0.18);
+  const logoSize = Math.round(size * resolvedLogoRatio);
   const logoX = Math.round((size - logoSize) / 2);
   const logoY = Math.round((size - logoSize) / 2);
 
-  const pad = Math.round(logoSize * 0.14);
+  const pad = Math.round(logoSize * (needsDarkBadge ? 0.14 : 0.12));
   const bgSize = logoSize + pad * 2;
   const radius = Math.round(bgSize * 0.24);
   const bgX = logoX - pad;
   const bgY = logoY - pad;
 
-  // White outer halo to punch the badge cleanly out of the QR pattern
-  const haloPad = Math.round(pad * 0.55);
+  const haloPad = Math.round(needsDarkBadge ? pad * 0.55 : pad * 0.35);
   ctx.save();
   ctx.fillStyle = "#ffffff";
   roundRect(
@@ -81,14 +157,28 @@ export async function generateQRDataURL(
   ctx.fill();
   ctx.restore();
 
-  // Dark badge so the white Codex icon stays visible
-  ctx.save();
-  ctx.fillStyle = "#0a0a0a";
-  roundRect(ctx, bgX, bgY, bgSize, bgSize, radius);
-  ctx.fill();
-  ctx.restore();
+  if (needsDarkBadge) {
+    ctx.save();
+    ctx.fillStyle = "#0a0a0a";
+    roundRect(ctx, bgX, bgY, bgSize, bgSize, radius);
+    ctx.fill();
+    ctx.restore();
+  }
 
-  ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
+  const bounds = needsDarkBadge
+    ? fullImageBounds(logo)
+    : getVisibleImageBounds(logo, logoSrc);
+  ctx.drawImage(
+    logo,
+    bounds.sx,
+    bounds.sy,
+    bounds.sw,
+    bounds.sh,
+    logoX,
+    logoY,
+    logoSize,
+    logoSize
+  );
 
   return canvas.toDataURL("image/png");
 }
@@ -120,6 +210,19 @@ export function displayURL(url: string): string {
     return `${parsed.hostname}${parsed.pathname}`;
   } catch {
     return url.replace(/^https?:\/\//, "");
+  }
+}
+
+export function compactDisplayURL(url: string): string {
+  try {
+    const parsed = new URL(url);
+    const segments = parsed.pathname.split("/").filter(Boolean);
+    if (segments.length <= 2) return displayURL(url);
+
+    const tail = segments.slice(-2).join("/");
+    return `${parsed.hostname}/.../${tail}`;
+  } catch {
+    return displayURL(url);
   }
 }
 
