@@ -42,17 +42,9 @@ export default function Home() {
   const [redeemUrl, setRedeemUrl] = useState(REDEEM_URL);
   const [customLogoSrc, setCustomLogoSrc] = useState<string | null>(null);
   const [customLogoName, setCustomLogoName] = useState<string | null>(null);
-  const [theme, setTheme] = useState<ThemeMode>(() => {
-    if (typeof window === "undefined") return "system";
-    const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
-    return isThemeMode(savedTheme) ? savedTheme : "system";
-  });
+  const [theme, setTheme] = useState<ThemeMode>("system");
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>("light");
-  const [language, setLanguage] = useState<Language>(() => {
-    if (typeof window === "undefined") return "es";
-    const savedLanguage = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
-    return isLanguage(savedLanguage) ? savedLanguage : "es";
-  });
+  const [language, setLanguage] = useState<Language>("es");
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const copy = translations[language];
@@ -60,6 +52,18 @@ export default function Home() {
   const logoSrc = customLogoSrc ?? defaultLogoSrc;
   const logoName = customLogoName ?? copy.defaultLogoName;
   const normalizedUrl = useMemo(() => redeemUrl.trim() || REDEEM_URL, [redeemUrl]);
+
+  useEffect(() => {
+    const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+    const savedLanguage = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+
+    const timeoutId = window.setTimeout(() => {
+      if (isThemeMode(savedTheme)) setTheme(savedTheme);
+      if (isLanguage(savedLanguage)) setLanguage(savedLanguage);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, []);
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
