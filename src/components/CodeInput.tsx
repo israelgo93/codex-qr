@@ -5,50 +5,57 @@ import { AnimatePresence, motion } from "framer-motion";
 import { parseCSV } from "@/lib/csv";
 import type { Dictionary } from "@/lib/i18n";
 import { formatMessage } from "@/lib/i18n";
-import { parseCodesFromText } from "@/lib/qr";
+import { parseCodesFromText, type QRType } from "@/lib/qr";
 
 interface CodeInputProps {
   copy: Dictionary;
-  onCodes: (codes: string[]) => void;
+  qrType: QRType;
+  onValues: (values: string[]) => void;
   disabled?: boolean;
 }
 
 type Mode = "paste" | "csv";
 
-export default function CodeInput({ copy, onCodes, disabled }: CodeInputProps) {
+export default function CodeInput({
+  copy,
+  qrType,
+  onValues,
+  disabled,
+}: CodeInputProps) {
   const [mode, setMode] = useState<Mode>("paste");
   const [text, setText] = useState("");
   const [fileName, setFileName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const inputCopy = getInputCopy(copy, qrType);
 
   const pastedCount = parseCodesFromText(text).length;
   const detectedLabel =
     pastedCount === 1
-      ? copy.detected_one
-      : formatMessage(copy.detected_other, { count: pastedCount });
+      ? inputCopy.detectedOne
+      : formatMessage(inputCopy.detectedOther, { count: pastedCount });
 
   const handlePasteSubmit = () => {
     setError(null);
-    const codes = parseCodesFromText(text);
-    if (!codes.length) {
-      setError(copy.pasteError);
+    const values = parseCodesFromText(text);
+    if (!values.length) {
+      setError(inputCopy.pasteError);
       return;
     }
-    onCodes(codes);
+    onValues(values);
   };
 
   const handleFile = async (file: File) => {
     setError(null);
     setFileName(file.name);
     try {
-      const codes = await parseCSV(file);
-      if (!codes.length) {
-        setError(copy.csvEmptyError);
+      const values = await parseCSV(file, qrType);
+      if (!values.length) {
+        setError(inputCopy.csvEmptyError);
         return;
       }
-      onCodes(codes);
+      onValues(values);
     } catch {
       setError(copy.csvReadError);
     }
@@ -95,13 +102,13 @@ export default function CodeInput({ copy, onCodes, disabled }: CodeInputProps) {
             <textarea
               value={text}
               onChange={(event) => setText(event.target.value)}
-              placeholder={copy.pastePlaceholder}
+              placeholder={inputCopy.pastePlaceholder}
               rows={7}
               className="field w-full resize-none rounded-2xl p-4 font-mono text-sm"
             />
             <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <span className="text-xs text-[color:var(--muted)]">
-                {pastedCount > 0 ? detectedLabel : copy.separatorHint}
+                {pastedCount > 0 ? detectedLabel : inputCopy.separatorHint}
               </span>
               <button
                 type="button"
@@ -186,8 +193,8 @@ export default function CodeInput({ copy, onCodes, disabled }: CodeInputProps) {
                 {fileName ?? copy.dropCsv}
               </p>
               <p className="mt-1 text-xs text-[color:var(--muted)]">
-                {copy.csvColumnHint}{" "}
-                <span className="font-mono">codes_promotional</span>
+                {inputCopy.csvColumnHint}{" "}
+                <span className="font-mono">{inputCopy.csvColumnExample}</span>
               </p>
             </div>
           </motion.div>
@@ -205,4 +212,35 @@ export default function CodeInput({ copy, onCodes, disabled }: CodeInputProps) {
       )}
     </div>
   );
+}
+
+function getInputCopy(copy: Dictionary, qrType: QRType) {
+  switch (qrType) {
+    case "api_credits":
+      return {
+        detectedOne: copy.detectedApiCredits_one,
+        detectedOther: copy.detectedApiCredits_other,
+        pastePlaceholder: copy.pastePlaceholderApiCredits,
+        separatorHint: copy.separatorHintApiCredits,
+        pasteError: copy.pasteErrorApiCredits,
+        csvEmptyError: copy.csvEmptyErrorApiCredits,
+        csvColumnHint: copy.csvColumnHintApiCredits,
+        csvColumnExample: "codes_promotional",
+      };
+    case "chatgpt_plus":
+      return {
+        detectedOne: copy.detectedChatGpt_one,
+        detectedOther: copy.detectedChatGpt_other,
+        pastePlaceholder: copy.pastePlaceholderChatGpt,
+        separatorHint: copy.separatorHintChatGpt,
+        pasteError: copy.pasteErrorChatGpt,
+        csvEmptyError: copy.csvEmptyErrorChatGpt,
+        csvColumnHint: copy.csvColumnHintChatGpt,
+        csvColumnExample: "chatgpt_url",
+      };
+    default: {
+      const exhaustiveType: never = qrType;
+      return exhaustiveType;
+    }
+  }
 }

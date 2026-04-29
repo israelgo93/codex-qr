@@ -6,12 +6,13 @@ import { motion } from "framer-motion";
 import IconButton from "@/components/IconButton";
 import { SettingsIcon } from "@/components/Icons";
 import type { Dictionary } from "@/lib/i18n";
-import { displayURL, REDEEM_URL } from "@/lib/qr";
+import { DEFAULT_REDEEM_URLS, displayURL, type QRType } from "@/lib/qr";
 
 interface SettingsModalProps {
   copy: Dictionary;
   isOpen: boolean;
   onClose: () => void;
+  qrType: QRType;
   redeemUrl: string;
   logoSrc: string;
   logoName: string;
@@ -24,6 +25,7 @@ export default function SettingsModal({
   copy,
   isOpen,
   onClose,
+  qrType,
   redeemUrl,
   logoSrc,
   logoName,
@@ -32,7 +34,8 @@ export default function SettingsModal({
   onReset,
 }: SettingsModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
-  const normalizedUrl = redeemUrl.trim() || REDEEM_URL;
+  const settingsCopy = getSettingsCopy(copy, qrType);
+  const normalizedUrl = redeemUrl.trim() || DEFAULT_REDEEM_URLS[qrType];
 
   useEffect(() => {
     if (!isOpen) return;
@@ -91,7 +94,7 @@ export default function SettingsModal({
               {copy.settingsTitle}
             </h2>
             <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
-              {copy.settingsDescription}
+              {settingsCopy.description}
             </p>
           </div>
           <IconButton label={copy.close} onClick={onClose}>
@@ -104,10 +107,10 @@ export default function SettingsModal({
         <div className="mt-6 space-y-4">
           <label className="block">
             <span className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-[color:var(--muted)]">
-              {copy.redeemUrl}
+              {settingsCopy.redeemUrlLabel}
             </span>
             <input
-              type="url"
+              type="text"
               value={redeemUrl}
               onChange={(event) => onRedeemUrlChange(event.target.value)}
               className="field w-full rounded-2xl px-4 py-2.5 text-sm"
@@ -162,4 +165,23 @@ export default function SettingsModal({
       </motion.div>
     </div>
   );
+}
+
+function getSettingsCopy(copy: Dictionary, qrType: QRType) {
+  switch (qrType) {
+    case "api_credits":
+      return {
+        description: copy.settingsDescriptionApiCredits,
+        redeemUrlLabel: copy.redeemUrlApiCredits,
+      };
+    case "chatgpt_plus":
+      return {
+        description: copy.settingsDescriptionChatGpt,
+        redeemUrlLabel: copy.redeemUrlChatGpt,
+      };
+    default: {
+      const exhaustiveType: never = qrType;
+      return exhaustiveType;
+    }
+  }
 }

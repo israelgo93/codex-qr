@@ -4,27 +4,27 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
-  REDEEM_URL,
   compactDisplayURL,
   displayURL,
   generateQRDataURL,
+  type QREntry,
 } from "@/lib/qr";
 import { DARK_LOGO_SRC } from "@/lib/theme";
 
 interface QRCardProps {
-  code: string;
+  entry: QREntry;
   index: number;
   logoSrc?: string;
-  redeemUrl?: string;
   altText: string;
+  logoAlt: string;
 }
 
 export default function QRCard({
-  code,
+  entry,
   index,
   logoSrc = DARK_LOGO_SRC,
-  redeemUrl = REDEEM_URL,
   altText,
+  logoAlt,
 }: QRCardProps) {
   const [dataUrl, setDataUrl] = useState<string | null>(null);
   const mountedRef = useRef(true);
@@ -32,7 +32,7 @@ export default function QRCard({
   useEffect(() => {
     mountedRef.current = true;
 
-    generateQRDataURL(redeemUrl, { logoSrc })
+    generateQRDataURL(entry.targetUrl, { logoSrc })
       .then((url) => {
         if (mountedRef.current) setDataUrl(url);
       })
@@ -41,7 +41,7 @@ export default function QRCard({
     return () => {
       mountedRef.current = false;
     };
-  }, [logoSrc, redeemUrl]);
+  }, [entry.targetUrl, logoSrc]);
 
   return (
     <motion.div
@@ -60,7 +60,7 @@ export default function QRCard({
         </span>
         <Image
           src={logoSrc}
-          alt="Logo del QR"
+          alt={logoAlt}
           width={20}
           height={20}
           className="opacity-80"
@@ -84,12 +84,12 @@ export default function QRCard({
       <div className="relative mt-3 text-center">
         <div
           className="mx-auto max-w-full truncate px-1 text-[9px] leading-tight tracking-normal text-[color:var(--muted)]"
-          title={displayURL(redeemUrl)}
+          title={displayURL(entry.targetUrl)}
         >
-          {compactDisplayURL(redeemUrl)}
+          {entry.displayUrl || compactDisplayURL(entry.targetUrl)}
         </div>
         <div className="mt-1 select-all font-mono text-sm font-semibold tracking-wider text-[color:var(--foreground)]">
-          {code}
+          {entry.codeLabel}
         </div>
       </div>
     </motion.div>

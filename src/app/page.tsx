@@ -24,7 +24,11 @@ import {
   translations,
 } from "@/lib/i18n";
 import { generatePDF } from "@/lib/pdf";
-import { REDEEM_URL } from "@/lib/qr";
+import {
+  DEFAULT_REDEEM_URLS,
+  buildQREntries,
+  type QRType,
+} from "@/lib/qr";
 import {
   ResolvedTheme,
   THEME_STORAGE_KEY,
@@ -34,12 +38,16 @@ import {
   logoForResolvedTheme,
 } from "@/lib/theme";
 
+const QR_TYPES: QRType[] = ["api_credits", "chatgpt_plus"];
+
 export default function Home() {
-  const [codes, setCodes] = useState<string[]>([]);
+  const [qrType, setQrType] = useState<QRType>("api_credits");
+  const [rawValues, setRawValues] = useState<string[]>([]);
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
   const [footer, setFooter] = useState("");
-  const [redeemUrl, setRedeemUrl] = useState(REDEEM_URL);
+  const [redeemUrls, setRedeemUrls] =
+    useState<Record<QRType, string>>(DEFAULT_REDEEM_URLS);
   const [customLogoSrc, setCustomLogoSrc] = useState<string | null>(null);
   const [customLogoName, setCustomLogoName] = useState<string | null>(null);
   const [theme, setTheme] = useState<ThemeMode>("system");
@@ -51,7 +59,17 @@ export default function Home() {
   const defaultLogoSrc = logoForResolvedTheme(resolvedTheme);
   const logoSrc = customLogoSrc ?? defaultLogoSrc;
   const logoName = customLogoName ?? copy.defaultLogoName;
-  const normalizedUrl = useMemo(() => redeemUrl.trim() || REDEEM_URL, [redeemUrl]);
+  const activeRedeemUrl = redeemUrls[qrType];
+  const normalizedUrl = useMemo(
+    () => activeRedeemUrl.trim() || DEFAULT_REDEEM_URLS[qrType],
+    [activeRedeemUrl, qrType]
+  );
+  const entries = useMemo(
+    () => buildQREntries(rawValues, qrType, normalizedUrl),
+    [normalizedUrl, qrType, rawValues]
+  );
+  const heroCopy = getHeroCopy(copy, qrType);
+  const previewMeta = getPreviewMeta(copy, qrType);
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
@@ -86,8 +104,13 @@ export default function Home() {
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
   }, [language]);
 
-  const handleCodes = (list: string[]) => {
-    setCodes(list);
+  const handleQrTypeChange = (nextType: QRType) => {
+    setQrType(nextType);
+    setRawValues([]);
+  };
+
+  const handleValues = (list: string[]) => {
+    setRawValues(list);
     window.setTimeout(() => {
       document
         .getElementById("preview")
@@ -110,21 +133,30 @@ export default function Home() {
   };
 
   const resetDefaults = () => {
-    setRedeemUrl(REDEEM_URL);
+    setRedeemUrls((value) => ({
+      ...value,
+      [qrType]: DEFAULT_REDEEM_URLS[qrType],
+    }));
     setCustomLogoSrc(null);
     setCustomLogoName(null);
   };
 
+  const handleRedeemUrlChange = (value: string) => {
+    setRedeemUrls((current) => ({
+      ...current,
+      [qrType]: value,
+    }));
+  };
+
   const handleDownload = async () => {
-    if (!codes.length || generating) return;
+    if (!entries.length || generating) return;
     setGenerating(true);
     setProgress(0);
 
     try {
-      const blob = await generatePDF(codes, {
+      const blob = await generatePDF(entries, {
         footer,
         logoSrc,
-        redeemUrl: normalizedUrl,
         onProgress: ({ current, total }) => {
           setProgress(Math.round((current / total) * 100));
         },
@@ -132,7 +164,7 @@ export default function Home() {
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = `codex-qr-${codes.length}-codes.pdf`;
+      anchor.download = `codex-qr-${qrType}-${entries.length}.pdf`;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
@@ -143,7 +175,7 @@ export default function Home() {
     }
   };
 
-  const pages = Math.ceil(codes.length / 9) || 0;
+  const pages = Math.ceil(entries.length / 9) || 0;
   const themeLabel = getThemeLabel(copy, theme);
 
   return (
@@ -205,19 +237,26 @@ export default function Home() {
             />
           </div>
           <h1 className="text-4xl font-semibold leading-tight tracking-normal sm:text-5xl">
-            {copy.headline}
+            {heroCopy.headline}
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-balance text-sm leading-6 text-[color:var(--muted)] sm:text-base">
-            {copy.description}
+            {heroCopy.description}
           </p>
         </motion.section>
 
-        <section className="mx-auto mt-10 max-w-2xl">
-          <CodeInput copy={copy} onCodes={handleCodes} disabled={generating} />
+        <section className="mx-auto mt-10 max-w-2xl space-y-4">
+          <QRTypeSelector copy={copy} qrType={qrType} onChange={handleQrTypeChange} />
+          <CodeInput
+            key={qrType}
+            copy={copy}
+            qrType={qrType}
+            onValues={handleValues}
+            disabled={generating}
+          />
         </section>
 
         <AnimatePresence>
-          {codes.length > 0 && (
+          {entries.length > 0 && (
             <motion.section
               id="preview"
               key="preview"
@@ -231,9 +270,9 @@ export default function Home() {
                 <div className="flex-1">
                   <h2 className="text-xl font-semibold">{copy.preview}</h2>
                   <p className="mt-1 text-sm text-[color:var(--muted)]">
-                    {formatMessage(copy.previewMeta, {
-                      codes: codes.length,
-                      codesPlural: codes.length === 1 ? "" : "s",
+                    {formatMessage(previewMeta, {
+                      items: entries.length,
+                      itemsPlural: entries.length === 1 ? "" : "s",
                       pages,
                       pagesPlural: pages === 1 ? "" : "s",
                     })}
@@ -273,14 +312,14 @@ export default function Home() {
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-                {codes.map((code, index) => (
+                {entries.map((entry, index) => (
                   <QRCard
-                    key={`${code}-${index}`}
-                    code={code}
+                    key={`${entry.targetUrl}-${index}`}
+                    entry={entry}
                     index={index}
                     logoSrc={logoSrc}
-                    redeemUrl={normalizedUrl}
-                    altText={formatMessage(copy.qrAlt, { code })}
+                    logoAlt={copy.centerLogo}
+                    altText={formatMessage(copy.qrAlt, { code: entry.codeLabel })}
                   />
                 ))}
               </div>
@@ -311,10 +350,11 @@ export default function Home() {
             copy={copy}
             isOpen={settingsOpen}
             onClose={() => setSettingsOpen(false)}
-            redeemUrl={redeemUrl}
+            qrType={qrType}
+            redeemUrl={activeRedeemUrl}
             logoSrc={logoSrc}
             logoName={logoName}
-            onRedeemUrlChange={setRedeemUrl}
+            onRedeemUrlChange={handleRedeemUrlChange}
             onLogoChange={handleLogo}
             onReset={resetDefaults}
           />
@@ -322,6 +362,92 @@ export default function Home() {
       </AnimatePresence>
     </main>
   );
+}
+
+function QRTypeSelector({
+  copy,
+  qrType,
+  onChange,
+}: {
+  copy: Dictionary;
+  qrType: QRType;
+  onChange: (type: QRType) => void;
+}) {
+  return (
+    <div className="glass-panel rounded-3xl p-4">
+      <span className="mb-3 block text-xs font-medium uppercase tracking-wider text-[color:var(--muted)]">
+        {copy.qrTypeLabel}
+      </span>
+      <div className="grid gap-2 rounded-2xl border border-[color:var(--line)] bg-[color:var(--control)] p-1 sm:grid-cols-2">
+        {QR_TYPES.map((type) => (
+          <button
+            key={type}
+            type="button"
+            onClick={() => onChange(type)}
+            className={`relative rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
+              qrType === type
+                ? "text-[color:var(--button-foreground)]"
+                : "text-[color:var(--muted)] hover:text-[color:var(--foreground)]"
+            }`}
+          >
+            {qrType === type && (
+              <motion.span
+                layoutId="qrTypePill"
+                className="absolute inset-0 rounded-xl bg-[color:var(--button-background)]"
+                transition={{ type: "spring", stiffness: 400, damping: 32 }}
+              />
+            )}
+            <span className="relative">{getQRTypeLabel(copy, type)}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function getHeroCopy(copy: Dictionary, qrType: QRType) {
+  switch (qrType) {
+    case "api_credits":
+      return {
+        headline: copy.headlineApiCredits,
+        description: copy.descriptionApiCredits,
+      };
+    case "chatgpt_plus":
+      return {
+        headline: copy.headlineChatGpt,
+        description: copy.descriptionChatGpt,
+      };
+    default: {
+      const exhaustiveType: never = qrType;
+      return exhaustiveType;
+    }
+  }
+}
+
+function getPreviewMeta(copy: Dictionary, qrType: QRType) {
+  switch (qrType) {
+    case "api_credits":
+      return copy.previewMetaApiCredits;
+    case "chatgpt_plus":
+      return copy.previewMetaChatGpt;
+    default: {
+      const exhaustiveType: never = qrType;
+      return exhaustiveType;
+    }
+  }
+}
+
+function getQRTypeLabel(copy: Dictionary, qrType: QRType) {
+  switch (qrType) {
+    case "api_credits":
+      return copy.qrTypeApiCredits;
+    case "chatgpt_plus":
+      return copy.qrTypeChatGpt;
+    default: {
+      const exhaustiveType: never = qrType;
+      return exhaustiveType;
+    }
+  }
 }
 
 function ThemeIcon({ theme }: { theme: ThemeMode }) {

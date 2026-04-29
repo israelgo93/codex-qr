@@ -1,4 +1,5 @@
 import Papa from "papaparse";
+import type { QRType } from "@/lib/qr";
 
 const CODE_COLUMN_HINTS = [
   "codes_promotional",
@@ -13,11 +14,22 @@ const CODE_COLUMN_HINTS = [
   "coupons",
 ];
 
+const CHATGPT_COLUMN_HINTS = [
+  "url",
+  "link",
+  "chatgpt_url",
+  "chatgpt_link",
+  "redeem_url",
+  "redemption_url",
+  "code",
+  "codes",
+];
+
 function normalize(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
-export function parseCSV(file: File): Promise<string[]> {
+export function parseCSV(file: File, type: QRType): Promise<string[]> {
   return new Promise((resolve, reject) => {
     Papa.parse<Record<string, string>>(file, {
       header: true,
@@ -30,17 +42,12 @@ export function parseCSV(file: File): Promise<string[]> {
             return;
           }
           const fields = result.meta.fields ?? [];
-          const targetField =
-            fields.find((f) =>
-              CODE_COLUMN_HINTS.some((h) => normalize(f) === normalize(h))
-            ) ??
-            fields.find((f) => normalize(f).includes("code")) ??
-            fields[0];
+          const targetField = findTargetField(fields, type);
 
-          const codes = rows
+          const values = rows
             .map((r) => (r[targetField] ?? "").toString().trim())
             .filter((s) => s.length > 0);
-          resolve(codes);
+          resolve(values);
         } catch (e) {
           reject(e);
         }
@@ -48,4 +55,28 @@ export function parseCSV(file: File): Promise<string[]> {
       error: reject,
     });
   });
+}
+
+function findTargetField(fields: string[], type: QRType): string {
+  switch (type) {
+    case "api_credits":
+      return findField(fields, CODE_COLUMN_HINTS, "code");
+    case "chatgpt_plus":
+      return findField(fields, CHATGPT_COLUMN_HINTS, "url");
+    default: {
+      const exhaustiveType: never = type;
+      return exhaustiveType;
+    }
+  }
+}
+
+function findField(fields: string[], hints: string[], fallbackIncludes: string): string {
+  return (
+    fields.find((field) =>
+      hints.some((hint) => normalize(field) === normalize(hint))
+    ) ??
+    fields.find((field) => normalize(field).includes(fallbackIncludes)) ??
+    fields.find((field) => field.trim().length > 0) ??
+    ""
+  );
 }

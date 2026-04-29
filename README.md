@@ -1,8 +1,16 @@
+<p align="center">
+  <a href="https://codexqr.vercel.app/">
+    <img src="./public/logos/Codex%20256%20x%20256.png" alt="Codex QR logo" width="88" height="88" />
+  </a>
+</p>
+
 # Codex QR
 
-Generador comunitario bilingüe para crear códigos QR imprimibles y reclamar créditos de API.
+Generador bilingüe para crear códigos QR imprimibles para **OpenAI API credits** y **ChatGPT Plus**.
 
-Bilingual community tool for generating printable QR codes to claim API credits.
+Bilingual generator for printable QR codes for **OpenAI API credits** and **ChatGPT Plus**.
+
+**Producción / Production:** [https://codexqr.vercel.app/](https://codexqr.vercel.app/)
 
 ---
 
@@ -10,33 +18,51 @@ Bilingual community tool for generating printable QR codes to claim API credits.
 
 ### Descripción
 
-Codex QR permite pegar códigos promocionales o subir un CSV y generar un PDF A4 listo para imprimir. Cada tarjeta incluye un QR con la URL de canje, el código visible, el logo central y un pie de página opcional.
+Codex QR permite pegar códigos, cargar archivos CSV y exportar un PDF A4 listo para imprimir. La aplicación soporta dos tipos de QR:
 
-El proyecto está pensado para actividades comunitarias, talleres y eventos de OpenAI Developers y Ambassadors de Codex, manteniendo una experiencia sencilla, profesional y fácil de adaptar.
+- **OpenAI API credits:** el QR apunta a la página de promociones de OpenAI Platform y la tarjeta muestra el código promocional.
+- **ChatGPT Plus:** el QR apunta al enlace individual de ChatGPT Plus. La entrada puede ser solo el código, una URL completa o una URL sin esquema como `chatgpt.com/p/CODIGO`.
 
-### Características principales
+La experiencia es completamente local en el navegador: no hay backend, base de datos ni almacenamiento de códigos en servidor.
 
-- Generación de múltiples QR desde texto pegado o archivo CSV.
-- Exportación a PDF A4 con 9 tarjetas por página.
-- URL de canje configurada por defecto para OpenAI.
-- Personalización opcional de URL y logo central.
-- Logo automático según tema:
-  - `public/logos/codex.png` para tema claro.
-  - `public/logos/Codex 256 x 256.png` para tema oscuro.
+### Funcionalidades
+
+- Selector de tipo de QR: `OpenAI API credits` o `ChatGPT Plus`.
+- Entrada manual por texto con separación por espacios, comas, punto y coma o saltos de línea.
+- Carga CSV con detección automática de columnas relevantes.
+- Normalización de enlaces de ChatGPT Plus:
+  - `CODIGO` -> `https://chatgpt.com/p/CODIGO`
+  - `chatgpt.com/p/CODIGO` -> `https://chatgpt.com/p/CODIGO`
+  - `https://chatgpt.com/p/CODIGO` -> se usa tal cual.
+- Exportación PDF A4 con 9 tarjetas por página.
+- Logo central configurable y logo automático según tema.
 - Tema claro, oscuro y sistema.
 - Interfaz bilingüe: español e inglés.
-- Diseño minimalista en blanco, negro y grises neutros.
+- Diseño responsivo con tokens de tema compartidos.
 
-### Tecnologías usadas
+### URLs por defecto
 
-- Next.js 16 App Router
-- React 19
-- TypeScript
-- Tailwind CSS 4
-- Framer Motion
-- jsPDF
-- qrcode
-- Papa Parse
+| Tipo | URL por defecto |
+| --- | --- |
+| OpenAI API credits | `https://platform.openai.com/settings/organization/billing/promotions` |
+| ChatGPT Plus | `https://chatgpt.com/p/` |
+| Producción | `https://codexqr.vercel.app/` |
+
+### CSV soportado
+
+Para **OpenAI API credits**, se priorizan columnas como:
+
+```text
+codes_promotional, promotional_code, promo_code, code, codes, coupon
+```
+
+Para **ChatGPT Plus**, se priorizan columnas como:
+
+```text
+url, link, chatgpt_url, chatgpt_link, redeem_url, code, codes
+```
+
+Si no hay coincidencias claras, la app usa la primera columna con contenido.
 
 ### Instalación
 
@@ -44,7 +70,7 @@ El proyecto está pensado para actividades comunitarias, talleres y eventos de O
 npm install
 ```
 
-### Ejecución local
+### Desarrollo local
 
 ```bash
 npm run dev
@@ -52,29 +78,28 @@ npm run dev
 
 Abre [http://localhost:3000](http://localhost:3000).
 
-### Scripts disponibles
+### Validación
 
 ```bash
-npm run dev
-npm run build
-npm run start
 npm run lint
+npm run typecheck
+npm run build
 ```
 
-Para validar tipos:
+También puedes ejecutar todo con:
 
 ```bash
-npx tsc --noEmit
+npm run check
 ```
 
-### Estructura básica
+### Estructura
 
 ```text
 src/
   app/
-    globals.css
-    layout.tsx
-    page.tsx
+    globals.css      # tokens de tema y estilos globales
+    layout.tsx       # metadata y layout raíz
+    page.tsx         # flujo principal de generación
   components/
     CodeInput.tsx
     IconButton.tsx
@@ -82,42 +107,53 @@ src/
     QRCard.tsx
     SettingsModal.tsx
   lib/
-    csv.ts
-    i18n.ts
-    pdf.ts
-    qr.ts
-    theme.ts
+    csv.ts           # lectura y selección de columnas CSV
+    i18n.ts          # textos bilingües
+    pdf.ts           # exportación PDF
+    qr.ts            # tipos, normalización y render QR
+    theme.ts         # tema y logos
 public/
   logos/
 ```
 
-### Configuración de temas
+### Temas y logos
 
-El botón de tema alterna de forma cíclica:
+El botón de tema alterna:
 
 ```text
 Claro -> Oscuro -> Sistema -> Claro
 ```
 
-Cuando el modo está en `Sistema`, la aplicación respeta `prefers-color-scheme` del navegador. El logo por defecto cambia automáticamente según el tema resuelto. Si el usuario sube un logo personalizado, ese logo se usa como override para la vista previa y el PDF.
+El logo por defecto cambia según el tema resuelto:
 
-### Soporte bilingüe
+- `public/logos/codex.png` para tema claro.
+- `public/logos/Codex 256 x 256.png` para tema oscuro.
 
-Los textos visibles están centralizados en `src/lib/i18n.ts`. Para agregar o modificar copy, actualiza las entradas `es` y `en` en el mismo archivo.
+Si se carga un logo personalizado, ese logo se usa en la vista previa y en el PDF.
+
+### Despliegue
+
+El sitio de producción está publicado en Vercel:
+
+[https://codexqr.vercel.app/](https://codexqr.vercel.app/)
+
+Para desplegar manualmente desde una sesión autenticada:
+
+```bash
+npx vercel@latest deploy --prod
+```
 
 ### Contribuir
 
-Lee [CONTRIBUTING.md](./CONTRIBUTING.md). Antes de abrir un pull request, ejecuta:
+Lee [CONTRIBUTING.md](./CONTRIBUTING.md). Antes de abrir un PR o pedir un commit, ejecuta:
 
 ```bash
-npm run lint
-npx tsc --noEmit
-npm run build
+npm run check
 ```
 
 ### Licencia
 
-Este proyecto usa la licencia Apache 2.0. Consulta [LICENSE](./LICENSE).
+Apache 2.0. Consulta [LICENSE](./LICENSE).
 
 ### Créditos
 
@@ -129,35 +165,53 @@ Creado por [Israel Julio Gomez](https://github.com/israelgo93) para la comunidad
 
 ### Description
 
-Codex QR lets you paste promotional codes or upload a CSV file and generate a print-ready A4 PDF. Each card includes a QR code with the redemption URL, the visible code, a centered logo, and an optional footer.
+Codex QR lets you paste codes, upload CSV files, and export a print-ready A4 PDF. The app supports two QR types:
 
-The project is designed for community activities, workshops, and OpenAI Developers / Codex Ambassador events while keeping the experience simple, professional, and easy to adapt.
+- **OpenAI API credits:** the QR points to the OpenAI Platform promotions page and the card shows the promotional code.
+- **ChatGPT Plus:** the QR points to the attendee-specific ChatGPT Plus link. Input may be only the code, a full URL, or a scheme-less URL such as `chatgpt.com/p/CODE`.
 
-### Main Features
+All processing happens in the browser. There is no backend, database, or server-side code storage.
 
-- Generate multiple QR codes from pasted text or a CSV file.
-- Export an A4 PDF with 9 cards per page.
-- Default OpenAI redemption URL.
-- Optional customization for URL and centered logo.
-- Automatic logo based on theme:
-  - `public/logos/codex.png` for light theme.
-  - `public/logos/Codex 256 x 256.png` for dark theme.
+### Features
+
+- QR type selector: `OpenAI API credits` or `ChatGPT Plus`.
+- Manual text input split by spaces, commas, semicolons, or line breaks.
+- CSV upload with automatic relevant-column detection.
+- ChatGPT Plus link normalization:
+  - `CODE` -> `https://chatgpt.com/p/CODE`
+  - `chatgpt.com/p/CODE` -> `https://chatgpt.com/p/CODE`
+  - `https://chatgpt.com/p/CODE` -> used as provided.
+- A4 PDF export with 9 cards per page.
+- Configurable center logo and automatic logo by theme.
 - Light, dark, and system theme modes.
-- Bilingual interface: Spanish and English.
-- Minimal black, white, and neutral gray visual design.
+- Bilingual UI: Spanish and English.
+- Responsive design using shared theme tokens.
 
-### Tech Stack
+### Default URLs
 
-- Next.js 16 App Router
-- React 19
-- TypeScript
-- Tailwind CSS 4
-- Framer Motion
-- jsPDF
-- qrcode
-- Papa Parse
+| Type | Default URL |
+| --- | --- |
+| OpenAI API credits | `https://platform.openai.com/settings/organization/billing/promotions` |
+| ChatGPT Plus | `https://chatgpt.com/p/` |
+| Production | `https://codexqr.vercel.app/` |
 
-### Installation
+### Supported CSV
+
+For **OpenAI API credits**, the app prioritizes columns like:
+
+```text
+codes_promotional, promotional_code, promo_code, code, codes, coupon
+```
+
+For **ChatGPT Plus**, the app prioritizes columns like:
+
+```text
+url, link, chatgpt_url, chatgpt_link, redeem_url, code, codes
+```
+
+If no clear match is found, the app uses the first non-empty column.
+
+### Install
 
 ```bash
 npm install
@@ -171,73 +225,40 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-### Available Scripts
+### Validation
 
 ```bash
-npm run dev
-npm run build
-npm run start
 npm run lint
+npm run typecheck
+npm run build
 ```
 
-For type checking:
+Or run the full check:
 
 ```bash
-npx tsc --noEmit
+npm run check
 ```
 
-### Basic Structure
+### Deployment
 
-```text
-src/
-  app/
-    globals.css
-    layout.tsx
-    page.tsx
-  components/
-    CodeInput.tsx
-    IconButton.tsx
-    Icons.tsx
-    QRCard.tsx
-    SettingsModal.tsx
-  lib/
-    csv.ts
-    i18n.ts
-    pdf.ts
-    qr.ts
-    theme.ts
-public/
-  logos/
+Production is hosted on Vercel:
+
+[https://codexqr.vercel.app/](https://codexqr.vercel.app/)
+
+Manual deployment from an authenticated session:
+
+```bash
+npx vercel@latest deploy --prod
 ```
-
-### Theme Configuration
-
-The theme button cycles through:
-
-```text
-Light -> Dark -> System -> Light
-```
-
-When the mode is `System`, the app respects the browser `prefers-color-scheme` setting. The default logo changes automatically based on the resolved theme. If a user uploads a custom logo, that logo overrides the default in both the preview and the PDF.
-
-### Bilingual Support
-
-Visible UI strings are centralized in `src/lib/i18n.ts`. To add or edit copy, update both the `es` and `en` entries in that file.
 
 ### Contributing
 
-Read [CONTRIBUTING.md](./CONTRIBUTING.md). Before opening a pull request, run:
+Read [CONTRIBUTING.md](./CONTRIBUTING.md). Before opening a PR or requesting a commit, run:
 
 ```bash
-npm run lint
-npx tsc --noEmit
-npm run build
+npm run check
 ```
 
 ### License
 
-This project is licensed under Apache 2.0. See [LICENSE](./LICENSE).
-
-### Credits
-
-Created by [Israel Julio Gomez](https://github.com/israelgo93) for the OpenAI Developers community.
+Apache 2.0. See [LICENSE](./LICENSE).

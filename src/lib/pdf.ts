@@ -1,9 +1,8 @@
 import jsPDF from "jspdf";
 import {
   DEFAULT_LOGO_SRC,
-  compactDisplayURL,
   generateQRDataURL,
-  REDEEM_URL,
+  type QREntry,
 } from "./qr";
 import { logoNeedsDarkBadge } from "./theme";
 
@@ -79,18 +78,16 @@ export interface PDFProgress {
 export interface PDFOptions {
   footer?: string;
   logoSrc?: string;
-  redeemUrl?: string;
   onProgress?: (p: PDFProgress) => void;
 }
 
 export async function generatePDF(
-  codes: string[],
+  entries: QREntry[],
   options: PDFOptions = {}
 ): Promise<Blob> {
   const {
     footer,
     logoSrc = DEFAULT_LOGO_SRC,
-    redeemUrl = REDEEM_URL,
     onProgress,
   } = options;
   const pdf = new jsPDF({
@@ -110,10 +107,10 @@ export async function generatePDF(
 
   const logoImg = await loadImage(logoSrc);
   const logoData = logoDataURL(logoImg, logoNeedsDarkBadge(logoSrc));
-  const urlLabel = compactDisplayURL(redeemUrl);
 
-  const total = codes.length;
+  const total = entries.length;
   for (let i = 0; i < total; i++) {
+    const entry = entries[i];
     const idx = i % 9;
     if (i > 0 && idx === 0) pdf.addPage();
 
@@ -158,21 +155,22 @@ export async function generatePDF(
     const qrX = x + (cellW - qrSize) / 2;
     const qrY = y + topReserved + (cellH - topReserved - bottomReserved - qrSize) / 2;
 
-    const qrData = await generateQRDataURL(redeemUrl, { size: 800, logoSrc });
+    const qrData = await generateQRDataURL(entry.targetUrl, { size: 800, logoSrc });
     pdf.addImage(qrData, "PNG", qrX, qrY, qrSize, qrSize);
 
     // URL
     pdf.setTextColor(40, 40, 40);
     pdf.setFontSize(5.4);
     pdf.setFont("helvetica", "normal");
-    const visibleUrl = truncateMiddleToWidth(pdf, urlLabel, cellW - 10);
+    const visibleUrl = truncateMiddleToWidth(pdf, entry.displayUrl, cellW - 10);
     pdf.text(visibleUrl, x + cellW / 2, qrY + qrSize + 4, { align: "center" });
 
     // Promo code (prominent)
     pdf.setFont("courier", "bold");
     pdf.setFontSize(11);
     pdf.setTextColor(0, 0, 0);
-    pdf.text(codes[i], x + cellW / 2, qrY + qrSize + 10, {
+    const visibleCode = truncateMiddleToWidth(pdf, entry.codeLabel, cellW - 8);
+    pdf.text(visibleCode, x + cellW / 2, qrY + qrSize + 10, {
       align: "center",
     });
 

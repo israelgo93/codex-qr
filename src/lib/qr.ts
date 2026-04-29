@@ -1,8 +1,24 @@
 import QRCode from "qrcode";
 import { DARK_LOGO_SRC, logoNeedsDarkBadge } from "@/lib/theme";
 
-export const REDEEM_URL =
+export type QRType = "api_credits" | "chatgpt_plus";
+
+export interface QREntry {
+  rawValue: string;
+  codeLabel: string;
+  targetUrl: string;
+  displayUrl: string;
+}
+
+export const API_CREDITS_REDEEM_URL =
   "https://platform.openai.com/settings/organization/billing/promotions";
+export const CHATGPT_PLUS_REDEEM_URL = "https://chatgpt.com/p/";
+export const REDEEM_URL = API_CREDITS_REDEEM_URL;
+
+export const DEFAULT_REDEEM_URLS: Record<QRType, string> = {
+  api_credits: API_CREDITS_REDEEM_URL,
+  chatgpt_plus: CHATGPT_PLUS_REDEEM_URL,
+};
 
 export const DEFAULT_LOGO_SRC = DARK_LOGO_SRC;
 
@@ -231,4 +247,107 @@ export function parseCodesFromText(input: string): string[] {
     .split(/[\s,;]+/)
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
+}
+
+export function buildQREntries(
+  values: string[],
+  type: QRType,
+  redeemUrl: string
+): QREntry[] {
+  return values
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0)
+    .map((value) => buildQREntry(value, type, redeemUrl));
+}
+
+export function buildQREntry(
+  value: string,
+  type: QRType,
+  redeemUrl: string
+): QREntry {
+  switch (type) {
+    case "api_credits":
+      return buildApiCreditsEntry(value, redeemUrl);
+    case "chatgpt_plus":
+      return buildChatGPTPlusEntry(value, redeemUrl);
+    default: {
+      const exhaustiveType: never = type;
+      return exhaustiveType;
+    }
+  }
+}
+
+function buildApiCreditsEntry(value: string, redeemUrl: string): QREntry {
+  const targetUrl = normalizeBaseUrl(redeemUrl, API_CREDITS_REDEEM_URL);
+  return {
+    rawValue: value,
+    codeLabel: value,
+    targetUrl,
+    displayUrl: compactDisplayURL(targetUrl),
+  };
+}
+
+function buildChatGPTPlusEntry(value: string, redeemUrl: string): QREntry {
+  const parsedInput = parsePossibleUrl(value);
+  const targetUrl = parsedInput?.href ?? appendCodeToBaseUrl(redeemUrl, value);
+  const codeLabel = parsedInput
+    ? extractChatGPTCode(parsedInput) ?? compactDisplayURL(parsedInput.href)
+    : value;
+
+  return {
+    rawValue: value,
+    codeLabel,
+    targetUrl,
+    displayUrl: compactDisplayURL(targetUrl),
+  };
+}
+
+function normalizeBaseUrl(value: string, fallback: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return fallback;
+  return parsePossibleUrl(trimmed)?.href ?? trimmed;
+}
+
+function appendCodeToBaseUrl(baseUrl: string, code: string): string {
+  const normalizedBase = normalizeBaseUrl(baseUrl, CHATGPT_PLUS_REDEEM_URL);
+  if (normalizedBase.includes("{code}")) {
+    return normalizedBase.replace("{code}", encodeURIComponent(code));
+  }
+
+  const separator = normalizedBase.endsWith("/") ? "" : "/";
+  return `${normalizedBase}${separator}${encodeURIComponent(code)}`;
+}
+
+function parsePossibleUrl(value: string): URL | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const candidate = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)
+    ? trimmed
+    : /^([\w-]+\.)+[\w-]+(\/|$)/i.test(trimmed)
+      ? `https://${trimmed}`
+      : null;
+
+  if (!candidate) return null;
+
+  try {
+    return new URL(candidate);
+  } catch {
+    return null;
+  }
+}
+
+function extractChatGPTCode(url: URL): string | null {
+  const segments = url.pathname.split("/").filter(Boolean);
+  const promoIndex = segments.findIndex((segment) => segment.toLowerCase() === "p");
+  const codeSegment =
+    promoIndex >= 0 ? segments[promoIndex + 1] : segments[segments.length - 1];
+
+  if (!codeSegment) return null;
+
+  try {
+    return decodeURIComponent(codeSegment);
+  } catch {
+    return codeSegment;
+  }
 }
