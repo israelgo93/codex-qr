@@ -38,7 +38,7 @@ import {
   logoForResolvedTheme,
 } from "@/lib/theme";
 
-const QR_TYPES: QRType[] = ["api_credits", "chatgpt_plus"];
+const QR_TYPES: QRType[] = ["api_credits", "custom_link"];
 
 export default function Home() {
   const [qrType, setQrType] = useState<QRType>("api_credits");
@@ -330,14 +330,16 @@ export default function Home() {
 
       <footer className="relative flex flex-wrap items-center justify-center gap-2 px-5 pb-8 text-center text-xs text-[color:var(--muted)]">
         <span>{copy.creditsPrefix}</span>
+        <span className="font-medium text-[color:var(--foreground)]">
+          {copy.creatorName}
+        </span>
         <a
-          href="https://github.com/israelgo93"
+          href="https://github.com/israelgo93/codex-qr"
           target="_blank"
           rel="noreferrer"
           aria-label={copy.githubProfile}
-          className="inline-flex items-center gap-1.5 font-medium text-[color:var(--foreground)] underline-offset-2 hover:underline"
+          className="inline-flex items-center text-[color:var(--foreground)] underline-offset-2 hover:underline"
         >
-          <span>{copy.creatorName}</span>
           <GitHubIcon />
         </a>
         <span aria-hidden="true">·</span>
@@ -412,7 +414,7 @@ function getHeroCopy(copy: Dictionary, qrType: QRType) {
         headline: copy.headlineApiCredits,
         description: copy.descriptionApiCredits,
       };
-    case "chatgpt_plus":
+    case "custom_link":
       return {
         headline: copy.headlineChatGpt,
         description: copy.descriptionChatGpt,
@@ -428,7 +430,7 @@ function getPreviewMeta(copy: Dictionary, qrType: QRType) {
   switch (qrType) {
     case "api_credits":
       return copy.previewMetaApiCredits;
-    case "chatgpt_plus":
+    case "custom_link":
       return copy.previewMetaChatGpt;
     default: {
       const exhaustiveType: never = qrType;
@@ -441,7 +443,7 @@ function getQRTypeLabel(copy: Dictionary, qrType: QRType) {
   switch (qrType) {
     case "api_credits":
       return copy.qrTypeApiCredits;
-    case "chatgpt_plus":
+    case "custom_link":
       return copy.qrTypeChatGpt;
     default: {
       const exhaustiveType: never = qrType;

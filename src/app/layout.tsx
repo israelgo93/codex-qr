@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Codex QR · API credits and ChatGPT Plus",
+  title: "Codex QR · API credits y enlaces personalizados",
   description:
-    "Generador bilingüe para crear códigos QR imprimibles para OpenAI API credits y ChatGPT Plus.",
+    "Generador bilingüe para crear códigos QR imprimibles para OpenAI API credits y enlaces personalizados.",
   icons: {
     icon: "/logos/Codex 256 x 256.png",
     apple: "/logos/Codex 256 x 256.png",

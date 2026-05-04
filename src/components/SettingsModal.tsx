@@ -112,6 +112,7 @@ export default function SettingsModal({
             <input
               type="text"
               value={redeemUrl}
+              placeholder={settingsCopy.redeemUrlPlaceholder}
               onChange={(event) => onRedeemUrlChange(event.target.value)}
               className="field w-full rounded-2xl px-4 py-2.5 text-sm"
             />
@@ -173,11 +174,13 @@ function getSettingsCopy(copy: Dictionary, qrType: QRType) {
       return {
         description: copy.settingsDescriptionApiCredits,
         redeemUrlLabel: copy.redeemUrlApiCredits,
+        redeemUrlPlaceholder: copy.redeemUrlPlaceholderApiCredits,
       };
-    case "chatgpt_plus":
+    case "custom_link":
       return {
         description: copy.settingsDescriptionChatGpt,
         redeemUrlLabel: copy.redeemUrlChatGpt,
+        redeemUrlPlaceholder: copy.redeemUrlPlaceholderChatGpt,
       };
     default: {
       const exhaustiveType: never = qrType;

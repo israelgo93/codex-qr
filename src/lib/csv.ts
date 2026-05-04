@@ -14,15 +14,17 @@ const CODE_COLUMN_HINTS = [
   "coupons",
 ];
 
-const CHATGPT_COLUMN_HINTS = [
+const CUSTOM_LINK_COLUMN_HINTS = [
   "url",
   "link",
-  "chatgpt_url",
-  "chatgpt_link",
   "redeem_url",
   "redemption_url",
+  "target_url",
+  "event_url",
   "code",
   "codes",
+  "coupon",
+  "token",
 ];
 
 function normalize(s: string) {
@@ -61,8 +63,8 @@ function findTargetField(fields: string[], type: QRType): string {
   switch (type) {
     case "api_credits":
       return findField(fields, CODE_COLUMN_HINTS, "code");
-    case "chatgpt_plus":
-      return findField(fields, CHATGPT_COLUMN_HINTS, "url");
+    case "custom_link":
+      return findField(fields, CUSTOM_LINK_COLUMN_HINTS, "url");
     default: {
       const exhaustiveType: never = type;
       return exhaustiveType;

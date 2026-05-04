@@ -12,18 +12,18 @@ export const translations = {
     navLogoAlt: "Logo de Codex QR",
     qrTypeLabel: "Tipo de QR",
     qrTypeApiCredits: "OpenAI API credits",
-    qrTypeChatGpt: "ChatGPT Plus",
+    qrTypeChatGpt: "Enlace personalizado",
     headlineApiCredits: "Generador de QR para reclamar créditos de la API de OpenAI",
-    headlineChatGpt: "Generador de QR para activar ChatGPT Plus",
+    headlineChatGpt: "Generador de QR para enlaces personalizados",
     descriptionApiCredits:
       "Pega códigos promocionales o sube un CSV y exporta un PDF A4 limpio, listo para imprimir.",
     descriptionChatGpt:
-      "Pega códigos o enlaces completos de ChatGPT Plus, o sube un CSV mixto, y genera QR listos para imprimir.",
+      "Pega códigos o enlaces completos, o sube un CSV mixto, y genera QR listos para imprimir.",
     pasteCodes: "Pegar códigos",
     uploadCsv: "Subir CSV",
     pastePlaceholderApiCredits: "GG3LJ5LCWEWWQWER\nSLECDHH0YC6X\nEFN0PJ1AQ4R\n...",
     pastePlaceholderChatGpt:
-      "YOUR-CODE\nhttps://chatgpt.com/p/YOUR-CODE\nchatgpt.com/p/ANOTHER-CODE\n...",
+      "CODIGO-EJEMPLO\nhttps://example.com/redeem?code=CODIGO-EJEMPLO\nexample.com/redeem/CODIGO-OTRO\n...",
     detectedApiCredits_one: "1 código detectado",
     detectedApiCredits_other: "{count} códigos detectados",
     detectedChatGpt_one: "1 enlace o código detectado",
@@ -33,7 +33,7 @@ export const translations = {
       "Puedes pegar códigos, enlaces completos o una mezcla de ambos",
     generateQr: "Generar QR",
     pasteErrorApiCredits: "Pega al menos un código promocional.",
-    pasteErrorChatGpt: "Pega al menos un código o enlace de ChatGPT Plus.",
+    pasteErrorChatGpt: "Pega al menos un código o enlace.",
     csvEmptyErrorApiCredits: "No se encontraron códigos en el CSV.",
     csvEmptyErrorChatGpt: "No se encontraron códigos o enlaces en el CSV.",
     csvReadError: "No se pudo leer el CSV.",
@@ -44,9 +44,13 @@ export const translations = {
     settingsDescriptionApiCredits:
       "Cambia la URL de canje y el logo solo si tu evento lo necesita.",
     settingsDescriptionChatGpt:
-      "Cambia la base del enlace de ChatGPT Plus y el logo solo si tu evento lo necesita.",
+      "Cambia la base del enlace y el logo solo si tu evento lo necesita.",
     redeemUrlApiCredits: "URL de canje",
-    redeemUrlChatGpt: "URL base de ChatGPT Plus",
+    redeemUrlChatGpt: "URL base del enlace",
+    redeemUrlPlaceholderApiCredits:
+      "https://platform.openai.com/settings/organization/billing/promotions",
+    redeemUrlPlaceholderChatGpt:
+      "https://chatgpt.com/p/ o https://example.com/redeem?code=",
     centerLogo: "Logo central",
     selectedLogo: "Logo seleccionado",
     defaultLogoName: "Logo automático según el tema",
@@ -71,25 +75,25 @@ export const translations = {
     creditsPrefix: "Creado por",
     creatorName: "Israel Gómez",
     creditsSuffix: "Codex Community Program",
-    githubProfile: "Perfil de GitHub de Israel Gómez",
+    githubProfile: "Repositorio de codigo de Codex QR",
   },
   en: {
     appName: "Codex QR",
     navLogoAlt: "Codex QR logo",
     qrTypeLabel: "QR type",
     qrTypeApiCredits: "OpenAI API credits",
-    qrTypeChatGpt: "ChatGPT Plus",
+    qrTypeChatGpt: "Custom link",
     headlineApiCredits: "QR generator for claiming OpenAI API credits",
-    headlineChatGpt: "QR generator for activating ChatGPT Plus",
+    headlineChatGpt: "QR generator for custom links",
     descriptionApiCredits:
       "Paste promotional codes or upload a CSV and export a clean, print-ready A4 PDF.",
     descriptionChatGpt:
-      "Paste ChatGPT Plus codes or full links, or upload a mixed CSV, and generate print-ready QR codes.",
+      "Paste codes or full links, or upload a mixed CSV, and generate print-ready QR codes.",
     pasteCodes: "Paste codes",
     uploadCsv: "Upload CSV",
     pastePlaceholderApiCredits: "GG3LJ5LCWEWWQWER\nSLECDHH0YC6X\nEFN0PJ1AQ4R\n...",
     pastePlaceholderChatGpt:
-      "YOUR-CODE\nhttps://chatgpt.com/p/YOUR-CODE\nchatgpt.com/p/ANOTHER-CODE\n...",
+      "SAMPLE-CODE\nhttps://example.com/redeem?code=SAMPLE-CODE\nexample.com/redeem/ANOTHER-CODE\n...",
     detectedApiCredits_one: "1 code detected",
     detectedApiCredits_other: "{count} codes detected",
     detectedChatGpt_one: "1 link or code detected",
@@ -99,7 +103,7 @@ export const translations = {
       "You can paste codes, full links, or a mix of both",
     generateQr: "Generate QR",
     pasteErrorApiCredits: "Paste at least one promotional code.",
-    pasteErrorChatGpt: "Paste at least one ChatGPT Plus code or link.",
+    pasteErrorChatGpt: "Paste at least one code or link.",
     csvEmptyErrorApiCredits: "No codes were found in the CSV.",
     csvEmptyErrorChatGpt: "No codes or links were found in the CSV.",
     csvReadError: "The CSV could not be read.",
@@ -110,9 +114,13 @@ export const translations = {
     settingsDescriptionApiCredits:
       "Change the redemption URL and logo only when your event needs it.",
     settingsDescriptionChatGpt:
-      "Change the ChatGPT Plus link base and logo only when your event needs it.",
+      "Change the link base and logo only when your event needs it.",
     redeemUrlApiCredits: "Redemption URL",
-    redeemUrlChatGpt: "ChatGPT Plus base URL",
+    redeemUrlChatGpt: "Link base URL",
+    redeemUrlPlaceholderApiCredits:
+      "https://platform.openai.com/settings/organization/billing/promotions",
+    redeemUrlPlaceholderChatGpt:
+      "https://chatgpt.com/p/ or https://example.com/redeem?code=",
     centerLogo: "Center logo",
     selectedLogo: "Selected logo",
     defaultLogoName: "Automatic logo based on theme",
@@ -137,7 +145,7 @@ export const translations = {
     creditsPrefix: "Created by",
     creatorName: "Israel Gomez",
     creditsSuffix: "Codex Community Program",
-    githubProfile: "Israel Gomez GitHub profile",
+    githubProfile: "Codex QR source code repository",
   },
 } as const;
 

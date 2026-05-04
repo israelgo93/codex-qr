@@ -227,7 +227,7 @@ function getInputCopy(copy: Dictionary, qrType: QRType) {
         csvColumnHint: copy.csvColumnHintApiCredits,
         csvColumnExample: "codes_promotional",
       };
-    case "chatgpt_plus":
+    case "custom_link":
       return {
         detectedOne: copy.detectedChatGpt_one,
         detectedOther: copy.detectedChatGpt_other,
@@ -236,7 +236,7 @@ function getInputCopy(copy: Dictionary, qrType: QRType) {
         pasteError: copy.pasteErrorChatGpt,
         csvEmptyError: copy.csvEmptyErrorChatGpt,
         csvColumnHint: copy.csvColumnHintChatGpt,
-        csvColumnExample: "chatgpt_url",
+        csvColumnExample: "url",
       };
     default: {
       const exhaustiveType: never = qrType;

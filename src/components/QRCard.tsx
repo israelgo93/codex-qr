@@ -88,7 +88,7 @@ export default function QRCard({
         >
           {entry.displayUrl || compactDisplayURL(entry.targetUrl)}
         </div>
-        <div className="mt-1 select-all font-mono text-sm font-semibold tracking-wider text-[color:var(--foreground)]">
+        <div className="mt-1 select-all break-all px-1 font-mono text-sm font-semibold leading-tight tracking-normal text-[color:var(--foreground)]">
           {entry.codeLabel}
         </div>
       </div>
